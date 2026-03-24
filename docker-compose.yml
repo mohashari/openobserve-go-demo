@@ -9,12 +9,13 @@ services:
       ZO_DATA_DIR: /data
     volumes:
       - openobserve-data:/data
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/5080"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/5080"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 60s
+      retries: 15
+      start_period: 90s
 
   otel-collector:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.114.0
@@ -26,6 +27,7 @@ services:
     depends_on:
       openobserve:
         condition: service_healthy
+    restart: unless-stopped
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
 
   inventory-service:
@@ -34,6 +36,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
     depends_on:
       - otel-collector
+    restart: unless-stopped
 
   order-service:
     build: ./order-service
@@ -45,6 +48,7 @@ services:
     depends_on:
       - inventory-service
       - otel-collector
+    restart: unless-stopped
 
   load-generator:
     build: ./load-generator
@@ -52,6 +56,7 @@ services:
       ORDER_SERVICE_URL: http://order-service:8080
     depends_on:
       - order-service
+    restart: unless-stopped
 
 volumes:
   openobserve-data:
