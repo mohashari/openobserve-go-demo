@@ -58,7 +58,7 @@ func NewInventoryServer() (*InventoryServer, error) {
 			"prod-A": 100,
 			"prod-B": 50,
 			"prod-C": 200,
-			"prod-D": 10,
+			"prod-D": 5,
 		},
 		tracer:             tracer,
 		meter:              meter,
