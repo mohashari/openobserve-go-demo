@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -70,22 +71,27 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
+	ctx, span := h.tracer.Start(ctx, "order.CreateOrder")
+	defer span.End()
+
 	start := time.Now()
 
 	var req OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		span.SetStatus(codes.Error, "invalid request")
+		span.RecordError(err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	if req.ProductID == "" || req.Quantity <= 0 {
-		http.Error(w, "product_id must be non-empty and quantity must be > 0", http.StatusBadRequest)
+		validationErr := fmt.Errorf("product_id must be non-empty and quantity must be > 0")
+		span.SetStatus(codes.Error, "invalid request")
+		span.RecordError(validationErr)
+		http.Error(w, validationErr.Error(), http.StatusBadRequest)
 		return
 	}
-
-	ctx := r.Context()
-	ctx, span := h.tracer.Start(ctx, "order.CreateOrder")
-	defer span.End()
 
 	span.SetAttributes(
 		attribute.String("product_id", req.ProductID),
@@ -101,7 +107,7 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	durationMs := float64(time.Since(start).Milliseconds())
+	durationMs := float64(time.Since(start).Microseconds()) / 1000.0
 
 	var status string
 	var httpStatus int
@@ -139,5 +145,7 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpStatus)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.ErrorContext(ctx, "failed to encode response", "error", err)
+	}
 }
