@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -119,7 +120,8 @@ func main() {
 	grpcServer.GracefulStop()
 
 	// Flush OTel providers
-	shutdownCtx := context.Background()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
 	if err := tp.Shutdown(shutdownCtx); err != nil {
 		log.Printf("error shutting down trace provider: %v", err)
 	}

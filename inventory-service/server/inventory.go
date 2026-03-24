@@ -11,6 +11,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	grpccodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	inventory "github.com/demo/inventory-service/inventory"
 )
@@ -68,6 +70,10 @@ func NewInventoryServer() (*InventoryServer, error) {
 
 // CheckStock checks whether the requested quantity is available for a product.
 func (s *InventoryServer) CheckStock(ctx context.Context, req *inventory.StockRequest) (*inventory.StockResponse, error) {
+	if req == nil {
+		return nil, status.Error(grpccodes.InvalidArgument, "request is nil")
+	}
+
 	ctx, span := s.tracer.Start(ctx, "inventory.CheckStock")
 	defer span.End()
 
@@ -83,11 +89,7 @@ func (s *InventoryServer) CheckStock(ctx context.Context, req *inventory.StockRe
 		attribute.Int("remaining", int(remaining)),
 	)
 
-	if available {
-		span.SetStatus(codes.Ok, "")
-	} else {
-		span.SetStatus(codes.Error, "insufficient stock")
-	}
+	span.SetStatus(codes.Ok, "")
 
 	s.logger.InfoContext(ctx, "stock check",
 		"product_id", req.ProductId,
