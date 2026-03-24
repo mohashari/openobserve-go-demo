@@ -1,0 +1,57 @@
+services:
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    ports:
+      - "5080:5080"
+    environment:
+      ZO_ROOT_USER_EMAIL: root@example.com
+      ZO_ROOT_USER_PASSWORD: Complexpass#123
+      ZO_DATA_DIR: /data
+    volumes:
+      - openobserve-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.0
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      openobserve:
+        condition: service_healthy
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+
+  inventory-service:
+    build: ./inventory-service
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+    depends_on:
+      - otel-collector
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8080:8080"
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+      INVENTORY_SERVICE_ADDR: inventory-service:9090
+    depends_on:
+      - inventory-service
+      - otel-collector
+
+  load-generator:
+    build: ./load-generator
+    environment:
+      ORDER_SERVICE_URL: http://order-service:8080
+    depends_on:
+      - order-service
+
+volumes:
+  openobserve-data:
