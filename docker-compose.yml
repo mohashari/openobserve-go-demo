@@ -10,11 +10,11 @@ services:
     volumes:
       - openobserve-data:/data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5080/healthz"]
+      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/5080"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
 
   otel-collector:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.114.0
