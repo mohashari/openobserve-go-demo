@@ -1,6 +1,6 @@
 services:
   openobserve:
-    image: public.ecr.aws/zinclabs/openobserve:latest
+    image: openobserve/openobserve:latest
     ports:
       - "5080:5080"
     environment:
@@ -17,7 +17,7 @@ services:
       start_period: 30s
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.115.0
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.114.0
     volumes:
       - ./otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml
     ports:

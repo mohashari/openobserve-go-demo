@@ -375,6 +375,6 @@ Go 1.21 introduced `log/slog` as the standard structured logging interface. The 
 | gRPC instrumentation | `otelgrpc` |
 | OTel SDK | `go.opentelemetry.io/otel v1.42.0` |
 | Log bridge | `otelslog` |
-| Telemetry pipeline | OpenTelemetry Collector Contrib 0.115.0 |
-| Observability backend | OpenObserve (latest) |
+| Telemetry pipeline | OpenTelemetry Collector Contrib 0.114.0 (ghcr.io) |
+| Observability backend | OpenObserve (Docker Hub latest) |
 | Deployment | Docker Compose |
