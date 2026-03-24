@@ -1,6 +1,6 @@
 module github.com/demo/inventory-service
 
-go 1.21
+go 1.25.0
 
 require (
 	go.opentelemetry.io/contrib/bridges/otelslog v0.17.0
